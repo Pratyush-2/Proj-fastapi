@@ -1,0 +1,52 @@
+# app/utils.py
+
+def calculate_targets(age, gender, height_cm, weight_kg, activity_level, goal):
+    # Mifflin-St Jeor BMR Formula
+    if gender.lower() == "male":
+        bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
+    else:
+        bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
+
+    # Activity multipliers
+    activity_multipliers = {
+        "sedentary": 1.2,
+        "light": 1.375,
+        "moderate": 1.55,
+        "active": 1.725,
+        "very_active": 1.9,
+    }
+
+    tdee = bmr * activity_multipliers.get(activity_level, 1.2)
+
+    # Adjust based on goal
+    if goal == "loss":
+        calories = tdee - 500
+    elif goal == "gain":
+        calories = tdee + 500
+    else:
+        calories = tdee
+
+    # Macro distribution: 20% protein, 50% carbs, 30% fats
+    protein = (calories * 0.20) / 4
+    carbs = (calories * 0.50) / 4
+    fats = (calories * 0.30) / 9
+
+    return calories, protein, carbs, fats
+
+# app/utils.py
+
+from app import models
+
+def calculate_goals(db, log_date):
+    """Calculate totals for a given date"""
+    logs = db.query(models.DailyLog).filter(models.DailyLog.date == log_date).all()
+
+    totals = {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}
+    for log in logs:
+        food = log.food
+        totals["calories"] += log.quantity * food.calories
+        totals["protein"]  += log.quantity * food.protein
+        totals["carbs"]    += log.quantity * food.carbs
+        totals["fats"]     += log.quantity * food.fats
+
+    return totals
