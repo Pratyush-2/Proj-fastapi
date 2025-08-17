@@ -1,13 +1,26 @@
-# app/utils.py
+"""Utility functions for the application."""
 
-def calculate_targets(age, gender, height_cm, weight_kg, activity_level, goal):
-    # Mifflin-St Jeor BMR Formula
-    if gender.lower() == "male":
-        bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
+from dataclasses import dataclass
+from . import models
+
+@dataclass
+class UserProfileData:
+    """Data class for user profile."""
+    age: int
+    gender: str
+    height_cm: float
+    weight_kg: float
+    activity_level: str
+    goal: str
+
+def calculate_targets(profile: UserProfileData):
+    """Calculate the target calories, protein, carbs, and fats for a user."""
+    # Mifflin-St Jeor BMR
+    if profile.gender.lower() == "male":
+        bmr = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * profile.age + 5
     else:
-        bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
+        bmr = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * profile.age - 161
 
-    # Activity multipliers
     activity_multipliers = {
         "sedentary": 1.2,
         "light": 1.375,
@@ -15,33 +28,27 @@ def calculate_targets(age, gender, height_cm, weight_kg, activity_level, goal):
         "active": 1.725,
         "very_active": 1.9,
     }
+    tdee = bmr * activity_multipliers.get(profile.activity_level, 1.2)
 
-    tdee = bmr * activity_multipliers.get(activity_level, 1.2)
-
-    # Adjust based on goal
-    if goal == "loss":
+    if profile.goal == "loss":
         calories = tdee - 500
-    elif goal == "gain":
+    elif profile.goal == "gain":
         calories = tdee + 500
     else:
         calories = tdee
 
-    # Macro distribution: 20% protein, 50% carbs, 30% fats
     protein = (calories * 0.20) / 4
     carbs = (calories * 0.50) / 4
     fats = (calories * 0.30) / 9
 
     return calories, protein, carbs, fats
 
-# app/utils.py
-
-from app import models
 
 def calculate_goals(db, log_date):
-    """Calculate totals for a given date"""
+    """Aggregate totals for a given date from DailyLog * Food."""
     logs = db.query(models.DailyLog).filter(models.DailyLog.date == log_date).all()
+    totals = {"calories": 0.0, "protein": 0.0, "carbs": 0.0, "fats": 0.0}
 
-    totals = {"calories": 0, "protein": 0, "carbs": 0, "fats": 0}
     for log in logs:
         food = log.food
         totals["calories"] += log.quantity * food.calories

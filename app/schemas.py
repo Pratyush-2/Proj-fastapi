@@ -1,10 +1,10 @@
-from pydantic import BaseModel
 from datetime import date
+from typing import Optional
+from pydantic import BaseModel
 
 # ---------- Food ----------
 class FoodBase(BaseModel):
     name: str
-    barcode: str | None = None
     calories: float
     protein: float
     carbs: float
@@ -17,25 +17,23 @@ class Food(FoodBase):
     id: int
 
     class Config:
-        from_attributes = True   # ✅ pydantic v2 fix
+        from_attributes = True  # Pydantic v2 replacement for orm_mode
 
-
-# ---------- Daily Log ----------
+# ---------- Daily Logs ----------
 class DailyLogBase(BaseModel):
-    food_id: int
-    quantity: float
     date: date
+    quantity: int
+    food_id: int
 
 class DailyLogCreate(DailyLogBase):
     pass
 
 class DailyLog(DailyLogBase):
     id: int
-    food: Food
+    food: Food | None = None
 
     class Config:
         from_attributes = True
-
 
 # ---------- Totals ----------
 class DailyTotals(BaseModel):
@@ -45,8 +43,7 @@ class DailyTotals(BaseModel):
     carbs: float
     fats: float
 
-
-# ---------- User Goal ----------
+# ---------- Goals ----------  # 🔹 CHANGES: Use *_goal to match DB columns
 class UserGoalBase(BaseModel):
     calories_goal: float
     protein_goal: float
@@ -57,6 +54,25 @@ class UserGoalCreate(UserGoalBase):
     pass
 
 class UserGoal(UserGoalBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# ---------- User Profiles ----------
+class UserProfileBase(BaseModel):
+    name: str
+    age: int
+    weight_kg: float
+    height_cm: float
+    gender: str
+    activity_level: str
+    goal: Optional[str] = None
+
+class UserProfileCreate(UserProfileBase):
+    pass
+
+class UserProfileResponse(UserProfileBase):
     id: int
 
     class Config:

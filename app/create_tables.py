@@ -1,6 +1,6 @@
-# app/create_tables.py
+"""Creates the tables in the database."""
+
 from .database import engine, Base
-from . import models
 
 print("Creating tables...")
 Base.metadata.create_all(bind=engine)
