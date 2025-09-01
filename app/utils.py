@@ -1,59 +1,41 @@
-"""Utility functions for the application."""
+from . import schemas
 
-from dataclasses import dataclass
-from . import models
-
-@dataclass
-class UserProfileData:
-    """Data class for user profile."""
-    age: int
-    gender: str
-    height_cm: float
-    weight_kg: float
-    activity_level: str
-    goal: str
-
-def calculate_targets(profile: UserProfileData):
-    """Calculate the target calories, protein, carbs, and fats for a user."""
-    # Mifflin-St Jeor BMR
-    if profile.gender.lower() == "male":
-        bmr = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * profile.age + 5
+def calculate_targets(profile: schemas.UserProfileCreate):
+    """
+    Calculates target calories, protein, carbs, and fats based on user profile.
+    """
+    if profile.gender.lower() == 'male':
+        bmr = 88.362 + (13.397 * profile.weight_kg) + (4.799 * profile.height_cm) - (5.677 * profile.age)
     else:
-        bmr = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * profile.age - 161
+        bmr = 447.593 + (9.247 * profile.weight_kg) + (3.098 * profile.height_cm) - (4.330 * profile.age)
 
     activity_multipliers = {
-        "sedentary": 1.2,
-        "light": 1.375,
-        "moderate": 1.55,
-        "active": 1.725,
-        "very_active": 1.9,
+        'sedentary': 1.2,
+        'lightly_active': 1.375,
+        'moderately_active': 1.55,
+        'very_active': 1.725,
+        'super_active': 1.9
     }
-    tdee = bmr * activity_multipliers.get(profile.activity_level, 1.2)
+    
+    activity_multiplier = activity_multipliers.get(profile.activity_level, 1.55)
 
-    if profile.goal == "loss":
-        calories = tdee - 500
-    elif profile.goal == "gain":
-        calories = tdee + 500
-    else:
-        calories = tdee
+    calories = bmr * activity_multiplier
 
-    protein = (calories * 0.20) / 4
-    carbs = (calories * 0.50) / 4
-    fats = (calories * 0.30) / 9
+    # Adjust calories based on goal
+    if profile.goal == 'lose_weight':
+        calories -= 500
+    elif profile.goal == 'gain_weight':
+        calories += 500
 
-    return calories, protein, carbs, fats
+    # Calculate macronutrients
+    protein = 1.9 * profile.weight_kg
+    protein_calories = protein * 4
+    
+    fat_percentage = 0.25
+    fat_calories = calories * fat_percentage
+    fat = fat_calories / 9
 
+    carb_calories = calories - protein_calories - fat_calories
+    carbs = carb_calories / 4
 
-def calculate_goals(db, log_date):
-    """Aggregate totals for a given date from DailyLog * Food."""
-    logs = db.query(models.DailyLog).filter(models.DailyLog.date == log_date).all()
-    totals = {"calories": 0.0, "protein": 0.0, "carbs": 0.0, "fats": 0.0}
-
-    for log in logs:
-        food = log.food
-        totals["calories"] += log.quantity * food.calories
-        totals["protein"]  += log.quantity * food.protein
-        totals["carbs"]    += log.quantity * food.carbs
-        totals["fats"]     += log.quantity * food.fats
-
-    return totals
+    return round(calories), round(protein), round(carbs), round(fat)

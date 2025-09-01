@@ -1,47 +1,26 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from . import models, schemas, utils, crud
+from typing import List
+
+from . import crud, schemas
 from .database import get_db
 
 router = APIRouter(prefix="/profiles", tags=["User Profiles"])
 
-@router.post("/", response_model=schemas.UserProfileResponse)
+# ---------- Create a user profile ----------
+@router.post("/", response_model=schemas.UserProfile)
 def create_profile(profile: schemas.UserProfileCreate, db: Session = Depends(get_db)):
-    profile_data = utils.UserProfileData(
-        age=profile.age,
-        gender=profile.gender,
-        height_cm=profile.height_cm,
-        weight_kg=profile.weight_kg,
-        activity_level=profile.activity_level,
-        goal=profile.goal,
-    )
-    cals, protein, carbs, fats = utils.calculate_targets(profile_data)
+    return crud.create_user_profile(db=db, profile=profile)
 
-    new_profile = models.UserProfile(
-        name=profile.name,
-        age=profile.age,
-        gender=profile.gender,
-        height_cm=profile.height_cm,
-        weight_kg=profile.weight_kg,
-        activity_level=profile.activity_level,
-        goal=profile.goal,
-        target_calories=cals,
-        target_protein=protein,
-        target_carbs=carbs,
-        target_fats=fats
-    )
-    db.add(new_profile)
-    db.commit()
-    db.refresh(new_profile)
-    return new_profile
-
-@router.get("/{profile_id}", response_model=schemas.UserProfileResponse)
-def get_profile(profile_id: int, db: Session = Depends(get_db)):
-    profile = crud.get_user_profile(db, profile_id)
-    if not profile:
-        raise HTTPException(status_code=404, detail="User profile not found")
-    return profile
-
-@router.get("/", response_model=list[schemas.UserProfileResponse])
+# ---------- Get all user profiles ----------
+@router.get("/", response_model=List[schemas.UserProfile])
 def get_profiles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_user_profiles(db, skip=skip, limit=limit)
+    return crud.get_user_profiles(db=db, skip=skip, limit=limit)
+
+# ---------- Get single user profile by ID ----------
+@router.get("/{user_id}", response_model=schemas.UserProfile)
+def get_profile(user_id: int, db: Session = Depends(get_db)):
+    profile = crud.get_user_profile(db=db, user_id=user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail=f"User profile {user_id} not found")
+    return profile
