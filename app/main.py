@@ -40,6 +40,10 @@ def create_log(log: schemas.DailyLogCreate, db: Session = Depends(get_db)):
 def read_logs(date: str, db: Session = Depends(get_db)):
     return crud.get_logs_by_date(db=db, date=date)
 
+@app.get("/totals/{date}")
+def get_totals(date: str, db: Session = Depends(get_db)):
+    return crud.get_daily_totals(db=db, date=date)
+
 # Goals
 @app.post("/goals/", response_model=schemas.UserGoal)
 def set_goal(goal: schemas.UserGoalCreate, db: Session = Depends(get_db)):

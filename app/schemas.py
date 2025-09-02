@@ -36,7 +36,7 @@ class DailyLog(DailyLogBase):
 
 # ---------- User Goals ----------
 class UserGoalBase(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
     calories_goal: float
     protein_goal: float
     carbs_goal: float

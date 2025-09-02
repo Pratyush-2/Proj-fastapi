@@ -55,6 +55,18 @@ def create_daily_log(db: Session, log: schemas.DailyLogCreate):
 def get_logs_by_date(db: Session, date: str):
     return db.query(models.DailyLog).filter(models.DailyLog.date == date).all()
 
+def get_daily_totals(db: Session, date: str):
+    logs = get_logs_by_date(db, date)
+    
+    totals = {
+        "calories": sum(log.food.calories * log.quantity for log in logs if log.food),
+        "protein": sum(log.food.protein * log.quantity for log in logs if log.food),
+        "carbs": sum(log.food.carbs * log.quantity for log in logs if log.food),
+        "fats": sum(log.food.fats * log.quantity for log in logs if log.food),
+    }
+    
+    return totals
+
 # ---------- User Goals ----------
 def set_goal(db: Session, goal: schemas.UserGoalCreate):
     db_user = db.query(models.UserProfile).filter(models.UserProfile.id == goal.user_id).first()
