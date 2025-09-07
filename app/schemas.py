@@ -9,6 +9,7 @@ class FoodBase(BaseModel):
     protein: float
     carbs: float
     fats: float
+    serving_size: Optional[str] = None
 
 class FoodCreate(FoodBase):
     barcode: Optional[str] = None
@@ -22,14 +23,15 @@ class Food(FoodBase):
 class DailyLogBase(BaseModel):
     date: date
     quantity: float
-    food_id: int
     user_id: int
 
 class DailyLogCreate(DailyLogBase):
-    pass
+    food_id: Optional[int] = None
+    food: Optional[FoodCreate] = None
 
 class DailyLog(DailyLogBase):
     id: int
+    food_id: int
     food: Optional[Food] = None
     class Config:
         from_attributes = True

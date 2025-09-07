@@ -5,6 +5,7 @@ from . import crud, schemas
 from .database import get_db, engine, Base
 from .user_profiles import router as profiles_router
 from .recommendations import router as recommendations_router
+from .services import food_search
 
 Base.metadata.create_all(bind=engine)
 
@@ -30,6 +31,10 @@ def create_food(food: schemas.FoodCreate, db: Session = Depends(get_db)):
 @app.get("/foods/", response_model=list[schemas.Food])
 def read_foods(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_foods(db=db, skip=skip, limit=limit)
+
+@app.get("/search-food/{food_name}")
+def search_food(food_name: str):
+    return food_search.search_food_by_name(food_name)
 
 # Daily Logs
 @app.post("/logs/", response_model=schemas.DailyLog)

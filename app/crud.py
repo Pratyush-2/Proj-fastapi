@@ -46,7 +46,26 @@ def get_foods(db: Session, skip: int = 0, limit: int = 100):
 
 # ---------- Daily Logs ----------
 def create_daily_log(db: Session, log: schemas.DailyLogCreate):
-    db_log = models.DailyLog(**log.dict())
+    food_id = log.food_id
+    if log.food:
+        # Check if food exists
+        db_food = db.query(models.Food).filter(models.Food.name == log.food.name).first()
+        if db_food:
+            food_id = db_food.id
+        else:
+            # Create new food
+            new_food = create_food(db, log.food)
+            food_id = new_food.id
+
+    if not food_id:
+        raise HTTPException(status_code=400, detail="Food not provided")
+
+    db_log = models.DailyLog(
+        date=log.date,
+        quantity=log.quantity,
+        user_id=log.user_id,
+        food_id=food_id
+    )
     db.add(db_log)
     db.commit()
     db.refresh(db_log)

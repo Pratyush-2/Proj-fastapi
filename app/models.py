@@ -28,6 +28,7 @@ class Food(Base):
     carbs = Column(Float)
     fats = Column(Float)
     barcode = Column(String, nullable=True)
+    serving_size = Column(String, nullable=True)
 
 # ---------- Daily Logs ----------
 class DailyLog(Base):
